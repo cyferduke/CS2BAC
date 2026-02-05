@@ -1,29 +1,33 @@
 import asyncio
 import time
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
-from winrt.windows.media.control import \
+from winsdk.windows.media.control import \
     GlobalSystemMediaTransportControlsSessionManager as MediaManager
-from winrt.windows.media.control import \
+from winsdk.windows.media.control import \
     GlobalSystemMediaTransportControlsSessionPlaybackStatus as PlaybackStatus
 import traceback
 import math
 
 
+import json, os
+
 class control:
-    def __init__(self, fade_duration, log, allow_auto_play) -> None:
+    def __init__(self, fade_duration, log, allow_auto_play, config_path="config.json"):
         self.fade_duration = fade_duration
         self.log = log
         self.allow_auto_play = allow_auto_play
-
         self.last_notification = None
         self.old_title = None
         self.stopped_by_us = False
 
-        self.aliases = {
-            "AyuGram.exe": ["telegram"],
-            "firefox.exe": ["308046B0AF4A39CB"]
-
-        }  # aliases incase source_app_user_model_id does not match with session.Process.name()
+        if os.path.exists(config_path):
+            with open(config_path, "r", encoding="utf-8") as f:
+                cfg = json.load(f)
+            self.apps = cfg.get("apps", [])
+            self.control_all_apps = cfg.get("control_all_apps", False)
+        else:
+            self.apps = []
+            self.control_all_apps = False
 
     def round_up_to_2_digits(self, number):
         return math.ceil(number * 100) / 100
@@ -33,31 +37,30 @@ class control:
         sessions = await MediaManager.request_async()
         return sessions.get_current_session()  # return sessions.get_sessions()
 
-    def get_app_volume_control(self, app_name):
+    def get_app_volume_controls(self, app_name):
+        """Return list of all audiothreads of process"""
         sessions = AudioUtilities.GetAllSessions()
+        controls = []
         for session in sessions:
-            if session.Process:
-                if session.Process and session.Process.name() == app_name:
-                    volume = session.SimpleAudioVolume
-                    return volume
-                else:
-                    try:
-                        if any(alias.lower() in app_name.lower() for alias in self.aliases[str(session.Process.name())]):
-                            volume = session.SimpleAudioVolume
-                            return volume
-                    except KeyError:
-                        pass
+            if not session.Process:
+                continue
+            proc_name = session.Process.name().lower()
 
-        print(
-            f"Couldn't match Volume Source with a application, please add a Alias for {app_name}:")
-        print("- " + "\n- ".join([f"{str(x.Process.name())}, {str(x.Process.exe())}"
-                                  for x in AudioUtilities.GetAllSessions() if x.Process is not None]))
-        return None
+            if self.control_all_apps:
+                controls.append(session.SimpleAudioVolume)
+            elif proc_name in [x.lower() for x in self.apps]:
+                controls.append(session.SimpleAudioVolume)
+
+        return controls
+
+    def normalize_volume(self, value):
+        # return vol percentage
+        return max(0.0, min(1.0, value / 100.0))
 
     def fade_volume(self, volume_control, target_volume, duration=None):
         if duration is None:
             duration = self.fade_duration
-
+        target_volume = self.normalize_volume(target_volume)
         if target_volume > 1.0:
             target_volume = target_volume / 100.0
 
@@ -73,7 +76,7 @@ class control:
         if duration != 0.0:
             volume_difference = self.round_up_to_2_digits(
                 abs(target_volume - current_volume))
-            # print("vol diff", volume_difference)
+
             # 100 steps per 1.0 volume difference
 
             per_step = 2
@@ -83,10 +86,10 @@ class control:
 
             step_duration = self.round_up_to_2_digits(
                 duration / steps)  # time per step
-            # print("sleep per step", step_duration)
+
             # volume increment per step
             step = self.round_up_to_2_digits(volume_difference / steps)
-            # print("1 step is", step)
+
 
             for _ in range(steps):
                 if target_volume > current_volume:
@@ -122,48 +125,33 @@ class control:
             self.fade_volume(volume, 1.0, duration=0)
 
     async def control_music(self, set_volume, fade):
-        # for current_session in await get_current_session():
         current_session = await self.get_current_session()
         if current_session:
             info = await current_session.try_get_media_properties_async()
             playback_info = current_session.get_playback_info()
 
-            app_name = current_session.source_app_user_model_id.split('!')[
-                0] + (".exe" if ".exe" not in str(current_session.source_app_user_model_id) else "")
+            app_name = current_session.source_app_user_model_id.split('!')[0]
+            if ".exe" not in app_name:
+                app_name += ".exe"
 
-            # info_dict = {song_attr: info.__getattribute__(
-            #     song_attr) for song_attr in dir(info) if song_attr[0] != '_'}
+            # get all audiothreads of process
+            volumes = self.get_app_volume_controls(app_name)
 
-            # print(info_dict)
-            volume = self.get_app_volume_control(app_name)
-            if not self.allow_auto_play:
-                if playback_info.playback_status != PlaybackStatus.PLAYING and self.stopped_by_us is False:
-                    print(
-                        "Music is currently not playing, please play some music to start!")
-                    return
+            if volumes:
+                for vol in volumes:
+                    if set_volume == 0:
+                        self.fade_volume(vol, set_volume, duration=fade)
+                        await self.pause(current_session, vol)
+                    else:
+                        if playback_info.playback_status != PlaybackStatus.PLAYING:
+                            await self.start(current_session)
+                        self.fade_volume(vol, set_volume, duration=fade)
 
             if self.log:
                 if self.old_title != (info.title, info.artist):
                     self.old_title = (info.title, info.artist)
-                    print(
-                        f"Playing {info.title} by {info.artist} on {app_name.split('.exe')[0]}")
-
-            if volume:
-                if set_volume == 0:
-                    self.fade_volume(volume, set_volume, duration=fade)
-                    await self.pause(current_session, volume)
-
-                else:
-                    if playback_info.playback_status != PlaybackStatus.PLAYING:
-                        await self.start(current_session)
-                        self.fade_volume(volume, set_volume,
-                                         duration=fade)
-            else:
-                if set_volume == 0:
-                    await self.pause(current_session)
-                else:
-                    if playback_info.playback_status != PlaybackStatus.PLAYING:
-                        await self.start(current_session)
+                    print(f"Playing {info.title} by {info.artist} on {app_name.split('.exe')[0]}")
 
         else:
             print("No current media session found.")
+
