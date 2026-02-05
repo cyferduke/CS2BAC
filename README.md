@@ -1,3 +1,5 @@
+![VAC Safe](https://img.shields.io/badge/VAC-Safe-brightgreen)
+![Monkey Powered](https://img.shields.io/badge/Monkey-Powered-yellow)
 # 🎧 CS2 Background Audio Controller
 Based on [CS2MC](https://github.com/kittens/CS2MC) creds to [kittens](https://github.com/kittens)😼
 
