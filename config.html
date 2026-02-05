@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>CS2BAC Config</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+</head>
+<body class="container mt-4">
+    <h1>CS2BAC Configuration</h1>
+    <form method="POST" action="/config">
+        <h2>Allowed Game Modes</h2>
+        <div class="row">
+          <div class="col-auto">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="mode_competitive" id="mode_competitive" {{mode_competitive}}>
+              <label class="form-check-label" for="mode_competitive">Competitive / Premier</label>
+            </div>
+          </div>
+          <div class="col-auto">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="mode_casual" id="mode_casual" {{mode_casual}}>
+              <label class="form-check-label" for="mode_casual">Casual</label>
+            </div>
+          </div>
+          <div class="col-auto">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="mode_deathmatch" id="mode_deathmatch" {{mode_deathmatch}}>
+              <label class="form-check-label" for="mode_deathmatch">Deathmatch</label>
+            </div>
+          </div>
+          <div class="col-auto">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="mode_survival" id="mode_survival" {{mode_survival}}>
+              <label class="form-check-label" for="mode_survival">Danger Zone</label>
+            </div>
+          </div>
+          <div class="col-auto">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="mode_practice" id="mode_practice" {{mode_practice}}>
+              <label class="form-check-label" for="mode_practice">Practice</label>
+            </div>
+          </div>
+        </div>
+
+        <h2>Volume Sliders</h2>
+        <div class="mb-3">
+            <label class="form-label">Base Volume: <span id="val_base">{{vol_base}}</span>%</label>
+            <input type="range" class="form-range" min="0" max="100" name="vol_base" value="{{vol_base}}"
+                   oninput="document.getElementById('val_base').innerText=this.value">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Menu Volume: <span id="val_menu">{{vol_menu}}</span>%</label>
+            <input type="range" class="form-range" min="0" max="100" name="vol_menu" value="{{vol_menu}}"
+                   oninput="document.getElementById('val_menu').innerText=this.value">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Game Volume: <span id="val_game">{{vol_game}}</span>%</label>
+            <input type="range" class="form-range" min="0" max="100" name="vol_game" value="{{vol_game}}"
+                   oninput="document.getElementById('val_game').innerText=this.value">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Buy Period Volume: <span id="val_buyp">{{vol_buyp}}</span>%</label>
+            <input type="range" class="form-range" min="0" max="100" name="vol_buyp" value="{{vol_buyp}}"
+                   oninput="document.getElementById('val_buyp').innerText=this.value">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Warmup Volume: <span id="val_warm">{{vol_warm}}</span>%</label>
+            <input type="range" class="form-range" min="0" max="100" name="vol_warm" value="{{vol_warm}}"
+                   oninput="document.getElementById('val_warm').innerText=this.value">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Spectator Volume: <span id="val_spec">{{vol_spec}}</span>%</label>
+            <input type="range" class="form-range" min="0" max="100" name="vol_spec" value="{{vol_spec}}"
+                   oninput="document.getElementById('val_spec').innerText=this.value">
+        </div>
+
+        <!-- Fade duration -->
+        <div class="mb-3">
+            <label class="form-label">Fade Duration (sec): <span id="val_fade">{{dur_fade}}</span></label>
+            <input type="range" class="form-range" min="0" max="10" name="dur_fade" value="{{dur_fade}}"
+                   oninput="document.getElementById('val_fade').innerText=this.value">
+        </div>
+        <h2>Apps</h2>
+        <div class="mb-3">
+          <label class="form-label">Controlled apps (.exe names)</label>
+          <textarea class="form-control" name="apps_raw" rows="6">{{apps_json}}</textarea>
+          <div class="form-text">Format: ["foobar2000.exe", "spotify.exe"]</div>
+        </div>
+        <!-- Flags -->
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="control_all_apps" id="control_all_apps" {{control_all_apps}}>
+          <label class="form-check-label" for="control_all_apps">Control all apps</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="allow_auto_play" id="allow_auto_play" {{allow_auto_play}}>
+            <label class="form-check-label" for="allow_auto_play">Allow Auto Play</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="log_vol" id="log_vol" {{log_vol}}>
+            <label class="form-check-label" for="log_vol">Log Volume Changes</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="log_mus" id="log_mus" {{log_mus}}>
+            <label class="form-check-label" for="log_mus">Log Music</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="log_gsi" id="log_gsi" {{log_gsi}}>
+            <label class="form-check-label" for="log_gsi">Log GSI Data</label>
+        </div>
+
+        <br>
+        <button type="submit" class="btn btn-primary">Save</button>
+    </form>
+<!-- Toast container -->
+<div class="position-fixed top-0 start-50 translate-middle-x p-3" style="z-index: 11">
+  <div id="updateToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="toast-header">
+      <strong class="me-auto">CS2BAC</strong>
+      <small>Now</small>
+      <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+    <div class="toast-body">
+      Configuration updated successfully!
+    </div>
+  </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    var toastEl = document.getElementById('updateToast');
+    // server will set true/false flag here
+    var shouldShow = "{{show_toast}}";
+    if (shouldShow === "true") {
+        var toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+        toast.show();
+    }
+});
+</script>
+
+</body>
+</html>

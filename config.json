@@ -1,0 +1,23 @@
+{
+    "allow_auto_play": false,
+    "log_vol": true,
+    "log_mus": false,
+    "log_gsi": false,
+    "vol_base": 100,
+    "vol_menu": 100,
+    "vol_game": 2,
+    "vol_buyp": 100,
+    "vol_warm": 100,
+    "vol_spec": 100,
+    "dur_fade": 1,
+    "apps": [
+        "foobar2000.exe",
+        "AyuGram.exe",
+        "firefox.exe",
+        "chrome.exe"
+    ],
+    "control_all_apps": false,
+    "allowed_modes": [
+        "competitive"
+    ]
+}
