@@ -18,8 +18,8 @@ class cs2bac:
         self.load_config()
         self.show_toast = False
 
-        ctrl = control(self.dur_fade, self.log_mus, self.allow_auto_play)
-        self.adjust_volume = ctrl.adjust_volume
+        self.ctrl = control(self.dur_fade, self.log_mus, self.allow_auto_play, self.apps, self.control_all_apps)
+        self.adjust_volume = self.ctrl.adjust_volume
 
     def load_config(self):
         if os.path.exists(self.config_path):
@@ -69,6 +69,10 @@ class cs2bac:
         }
         with open(self.config_path, "w", encoding="utf-8") as f:
             json.dump(cfg, f, indent=4)
+            
+        # Reload control obj with new params in case of cfg app list change  
+        self.ctrl.reload_config(self.apps, self.control_all_apps,
+                                    self.allow_auto_play, self.dur_fade, self.log_mus)
 
     def volume(self, set_volume, why):
         why_dict = {
@@ -78,10 +82,11 @@ class cs2bac:
             "dead": "We're dead",
             "game": "We're playing",
             "warm": "We're warming up",
-            "play": "We're deciding on or switching a team"
+            "play": "We're deciding on or switching a team",
+            "reapply": "We're reaplying volume call cuz of config change"
         }
 
-        if set_volume != self.current_volume:
+        if set_volume != self.current_volume or why == "reapply":
             if self.log_vol:
                 print(why_dict[why] + ",", "setting volume to",
                       str(set_volume) + "%")
@@ -94,6 +99,10 @@ class cs2bac:
         except Exception:
             traceback.print_exc()
 
+    def apply_current_volume(self):
+        if self.current_volume is not None:
+            self.volume(self.current_volume, "reapply")
+    
     def main(self, data):
         try:
             if data["provider"]["appid"] == 730:
@@ -264,6 +273,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             mc.control_all_apps = "control_all_apps" in params
 
             mc.save_config()
+            mc.apply_current_volume()
 
             # redir to main page
             self.send_response(303)
