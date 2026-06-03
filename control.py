@@ -12,25 +12,25 @@ import math
 import json, os
 
 class control:
-    def __init__(self, fade_duration, log, allow_auto_play, config_path="config.json"):
+    def __init__(self, fade_duration, log, allow_auto_play, apps, control_all_apps):
         self.fade_duration = fade_duration
         self.log = log
         self.allow_auto_play = allow_auto_play
         self.last_notification = None
         self.old_title = None
         self.stopped_by_us = False
-
-        if os.path.exists(config_path):
-            with open(config_path, "r", encoding="utf-8") as f:
-                cfg = json.load(f)
-            self.apps = cfg.get("apps", [])
-            self.control_all_apps = cfg.get("control_all_apps", False)
-        else:
-            self.apps = []
-            self.control_all_apps = False
+        self.apps = apps
+        self.control_all_apps = control_all_apps
 
     def round_up_to_2_digits(self, number):
         return math.ceil(number * 100) / 100
+
+    def reload_config(self, apps, control_all_apps, allow_auto_play, dur_fade, log_mus):
+        self.apps = apps
+        self.control_all_apps = control_all_apps
+        self.allow_auto_play = allow_auto_play
+        self.fade_duration = dur_fade
+        self.log = log_mus
 
     async def get_current_session(self):
         """Return currently playing audio session"""
